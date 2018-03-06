@@ -41,8 +41,8 @@
                 <rect onmousedown="changeColor(this)" x='5' y='180' width='30' height='30' style='fill: black'/>
                 <rect onmousedown="changeColor(this)" class='stroke' x='41' y='181' width='28' height='28' style='fill: white'/>
 
-                <use x='5' y='215' width='30' height='30' href="icons/undo.svg#undo" style='fill:none'></use>
-                <use x='40' y='215' width='30' height='30' href="icons/redo.svg#redo" style='fill:none'></use>
+                <use x='5' y='215' width='30' height='30' href="icons/undo.svg#undo" style='fill:none' onclick="undo();"></use>
+                <use x='40' y='215' width='30' height='30' href="icons/redo.svg#redo" style='fill:none' onclick="redo();"></use>
                 <use x='20' y='250' width='30' height='30' href="icons/delete.svg#delete" style='fill:none' onclick="clearCanvas()"></use>
             </svg>
             <canvas>Please update to a more modern browser to use this application</canvas>

@@ -204,7 +204,8 @@ function initCanvas()
 	});
 	canvas.addEventListener('mouseup', function(e){
         mouse.drawing = false;
-        //TODO: make this listener record the canvas data as a URL in an array and hidden field
+        undoQueue.unshift( canvas.toDataURL() );//every stroke adds a new URL to revert to
+        redoQueue = [];//after you draw over something, you can't redo your old strokes
 	});
 	
 	// Borrowed from http://bencentra.com/code/2014/12/05/html5-canvas-touch-events.html
@@ -255,11 +256,61 @@ function changeColor(ele)
 /**
   * Clears the canvas of all drawings
 */
-//TODO: add ability to undo and redo
 function clearCanvas()
 {
 	let canvas = document.getElementsByTagName("canvas")[0];
 	canvas.width = canvas.width;
+}
+
+/** 
+ * Removes the last stroke from the canvas
+*/
+function undo()
+{
+    clearCanvas();
+
+    if( undoQueue.length > 0 )
+    {
+        //add to redo queue
+        let undone = undoQueue.shift();
+        redoQueue.unshift( undone );
+
+        if( undoQueue.length > 1 )
+        {
+            //repaint with last URL
+            //Borrowed from https://stackoverflow.com/questions/4773966/drawing-an-image-from-a-data-url-to-a-canvas
+            let canvas = document.getElementsByTagName("canvas")[0];
+            let ctx = canvas.getContext('2d');
+            let img = new Image();
+            img.onload = function(){
+                ctx.drawImage(img,0,0);
+            };
+            img.src = undoQueue[0]; 
+        }
+    }
+}
+
+/** 
+ * Replaces the last removed stroke onto the canvas
+*/
+function redo()
+{
+    if( redoQueue.length > 0 )
+    {
+        let redone = redoQueue.shift();
+        undoQueue.unshift( redone );
+        clearCanvas();
+
+        //repaint with last URL
+        //Borrowed from https://stackoverflow.com/questions/4773966/drawing-an-image-from-a-data-url-to-a-canvas
+        let canvas = document.getElementsByTagName("canvas")[0];
+        let ctx = canvas.getContext('2d');
+        let img = new Image();
+        img.onload = function(){
+            ctx.drawImage(img,0,0);
+        };
+        img.src = redone;
+    }
 }
 
 /**
