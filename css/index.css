@@ -1,0 +1,347 @@
+html
+{
+    font-family: 'Dosis', sans-serif;
+    height: 100%;
+}
+
+body
+{
+    --purple: #8a5293;
+    --blue: #2176FF;
+    margin: 0;
+    height: 100%;
+    max-height: 100%;
+    overflow: hidden;
+}
+
+main
+{
+    display: flex;
+    height: 100%;
+}
+
+main > div
+{
+    flex-basis: 75%;
+}
+
+h1
+{
+    text-align: center;
+    font-family: 'Dosis', sans-serif;
+    font-size: 76pt;
+    margin-bottom: 40px;
+}
+
+label
+{
+    width: 100px;
+    display: inline-block;
+    font-size: 15pt;
+}
+
+form
+{
+    text-align: center;
+}
+
+b
+{
+    color: var(--blue);
+}
+
+nav button
+{
+    background-color: var(--purple);
+    color: white;
+    font-size: 15pt;
+    padding: 15px;
+    position: fixed;
+    border: none;
+}
+
+nav button:hover
+{
+    cursor: pointer;
+}
+
+canvas
+{
+    width: 80%;
+    height: 70%;
+    border: 1px solid #AAA;
+}
+
+rect
+{
+    stroke-width: 2;
+}
+
+/* classes */
+.padding
+{
+    padding: 10%;
+}
+
+.error
+{
+    background-color: #ff8080;
+    border: 2px solid red;
+    color: white;
+    padding: 5px;
+    width: 100%;
+    border-radius: 5px;
+    text-align: center;
+    font-size: 15pt;
+}
+
+.textbox
+{
+    height: 25px;
+    width: 150px;
+}
+
+.break
+{
+    display: block;
+    margin-bottom: 30px;
+}
+
+.button
+{
+    background-color: var(--background);
+    width: 200px;
+    height: 50px;
+    border-radius: 5px;
+    color: white;
+    font-size: 20pt;
+    font-weight: 300;
+    margin: 40px 15px 10px;
+    cursor: pointer;
+}
+
+.hidden
+{
+    display: none;
+}
+
+.center
+{
+    text-align: center;
+}
+
+.margin
+{
+    margin: 10%;
+}
+
+.padding
+{
+    padding: 10%;
+}
+
+.flow
+{
+    overflow-y: auto;
+    flex-grow: 2;
+}
+
+.message
+{
+    width: 80%;
+    margin: 15px 0 15px 8px;
+    min-height: 50px;
+    clear: both;
+}
+
+.message > span
+{
+    color: white;
+    padding: 10px;
+    line-height: 30px;
+}
+
+.message.mine
+{
+    float: right;
+}
+
+.me
+{
+    background-color: var(--blue);
+    border-radius: 0 0 0 5px;
+    box-shadow: -0.5em 0 0 var(--blue);
+    float: right;
+}
+
+div.other
+{
+    background-color: var(--purple);
+    border-radius: 0 5px 5px 0;
+    box-shadow: -0.5em 0 0 var(--purple);
+}
+
+.message .date
+{
+    color: #888;
+    font-size: 11pt;
+    font-weight: 300;
+    padding: 0 10px;
+    margin: 0 0 3px;
+}
+
+.date.mine
+{
+    text-align: right;
+}
+
+.other .date
+{
+    text-align: left;
+    background-color: white;
+    margin: 0 0 3px -8px;
+    padding-bottom: 3px;
+}
+
+.slideCont
+{
+    overflow: hidden;
+}
+
+.stroke
+{
+    stroke: black;
+    stroke-width: 2;
+}
+
+body > div.ui-dialog
+{
+    width: 60% !important;
+}
+
+/* ids */
+#helpBox
+{
+    display: none;
+}
+
+#toolbox
+{
+    margin: auto 10px;
+}
+
+#toolbox > rect, #toolbox > use
+{
+    cursor: pointer;
+}
+
+#drawArea
+{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+#desc
+{
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#desc > label
+{
+    width: 160px;
+}
+
+#desc > input
+{
+    width: 200px;
+    margin: 0 10px;
+    height: 26px;
+}
+
+#desc > input.button
+{
+    height: 50px;
+}
+
+#help
+{
+    bottom: 0;
+    border-radius: 0 5px 0 0;
+    background-color: black;
+    width: 50px;
+    height: 50px;
+}
+
+#quit
+{
+    border-radius: 0 0 5px 0;
+}
+
+#startForm, #endForm
+{
+    position: absolute;
+    width: 80%;
+    height: 50%;
+}
+
+#startForm > span
+{
+    background-color: white;
+    display: block;
+    height: 100%;
+    width: 50%;
+    margin: auto;
+}
+
+#chat
+{
+    flex-basis: 25%;
+    border-left: 1px solid #AAA;
+    display: flex;
+    flex-direction: column;
+}
+
+#messages
+{
+    display: block;
+    height: calc(95% - 50px);
+    padding: 15px 0;
+    overflow-y: scroll;
+}
+
+#messageInput
+{
+    width: 100%;
+    height: 5%;
+    display: flex;
+    flex-basis: 10%;
+}
+
+#messageInput > textarea, #messageInput > button
+{
+    height: 100%;
+    flex-basis: 25%;
+    border-radius: 0;
+    padding: 0 5px;
+    box-sizing: border-box;
+    background-color: white;
+    border: none;
+    border-top: 1px solid #AAA;
+    color: #888;
+    resize: none;
+    font-size: 10pt;
+}
+
+#messageInput > #message
+{
+    flex-basis: 75%;
+    padding: 5px;
+}
+
+/* 1157, flexbox breaks slide thing (white background doesn't cover), 
+<200height breaks the forms because of the whitespace on the page
+*/
