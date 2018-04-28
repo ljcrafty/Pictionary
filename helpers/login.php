@@ -61,22 +61,15 @@
         }
     }
 
-    //handle key
-    $key = decryptKey($_POST['key']);
+    //create token and session cookie
+    $tokenData = createToken($user);
 
-    $query = "INSERT INTO Rooms (username, roomCode, stage) VALUES(?, ?, ?)";
-    $data = $db -> query($query, array($user, $room, 'start'));
+    $query = "INSERT INTO Rooms (username, roomCode, stage, token) VALUES(?, ?, ?, ?)";
+    $data = $db -> query($query, array($user, $room, 'start', $tokenData['token']));
 
     //one row was affected (inserted)
     if( $data == 1 )
     {
-        //TODO: redirect if they don't use js?
-        //TODO: redirect for browsers too
-        //TODO: add key column in DB and insert key into DB once decrypted
-        
-        //create token and session cookie
-        $tokenData = createToken($user);
-
         //on success, set session vars
         $_SESSION['stage'] = 'start';
         $_SESSION['username'] = $user;

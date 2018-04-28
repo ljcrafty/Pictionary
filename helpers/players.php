@@ -9,7 +9,8 @@
     sessionStart();
     
     //check super globals
-    if( !checkSession() || !array_key_exists('room', $_SESSION) )
+    if( !checkSession() || !array_key_exists('room', $_SESSION) || 
+        !checkToken( $_SESSION['token'], $_SESSION['username'], $_SESSION['timestamp'] ) )
     {
         dies("An error occurred.");
     }

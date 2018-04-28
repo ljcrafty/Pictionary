@@ -92,9 +92,6 @@ class DB
 
     /**
      * Gets the number of players in a room
-     * $type    -   the type of data to return (options are 'in' and 'out'). Type 'in' returns
-     *      the number of players who are in the room. Type 'out' returns the number of players
-     *      who are in the room, but are not in the given stage.
      * $room    -   the room code to get numbers for
      * $stage   -   (optional) the stage to get numbers for
      * returns  -   the number of players included in the given type or -1 if input was invalid

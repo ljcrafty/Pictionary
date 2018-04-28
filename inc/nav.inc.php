@@ -36,16 +36,26 @@
                 the top left corner of the screen. Happy drawing!</p>";
             break;
 
-        case "drawn":
-            echo "<h1>Waiting Room</h1><p>You are in the waiting room! It seems like your friends are 
+        case "guessing":
+            if( basename($_SERVER['PHP_SELF']) == "guess.php" )
+            {
+                echo "<h1>Guessing</h1><p>This screen is where you have to guess what another player drew. 
+                    The other player's drawing is shown on the screen now! The artist of the drawing is 
+                    shown underneath the drawing. All you need to do is guess what the other player drew 
+                    in their drawing by entering your guess in the text box at the bottom of the screen. 
+                    When you are happy with your guess, press \"Done\"!
+                    <p>As always, the box on the right of the screen is where you can chat with your friends 
+                    during the game. You can leave the game at any point by pressing the \"Quit\" button in 
+                    the top left corner of the screen. Happy guessing!</p>";
+            }
+            else
+            {
+                echo "<h1>Waiting Room</h1><p>You are in the waiting room! It seems like your friends are 
                 still drawing. You can still chat with them by using the chat box on the right side of 
                 the screen, just remember: no cheating! Once all of your friends have finished drawing, 
                 you will be automatically redirected to the next stage of the game. The counter on the 
-                screen shows you how many friends you are waiting on. Happy guessing!</p>";
-            break;
-
-        case "guessing":
-            echo "<h1>Guessing</h1><p></p>";
+                screen shows you how many friends you are waiting on. Good luck!</p>";
+            }
             break;
         
         case "guessed":

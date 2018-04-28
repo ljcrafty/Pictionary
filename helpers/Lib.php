@@ -59,21 +59,16 @@ function checkSession()
  * $msg     -   the whole message sent by the user with message delimiter of ":::"
  * returns  -   the key that was sent, or false if decryption fails
  */
-function decryptKey( $msg )
+//NOTE: this still doesn't work so I unhooked it
+function decrypt( $msg )
 {
     $key = openssl_get_privatekey( file_get_contents( $_SERVER['PRIV_KEY'] ) );
-    $encryptedKey = base64_decode(explode( ":::", $msg )[0]);
-    $realMsg = explode( ":::", $msg )[1];
 
-    if( openssl_private_decrypt($encryptedKey, $decrypted, $key) )
+    if( openssl_private_decrypt($msg, $decrypted, $key, OPENSSL_PKCS1_PADDING) )
     {
-        $iv = base64_decode(explode(":::", $decrypted)[1]);
-        $symKey = explode(":::", $decrypted)[0];
-        $data = openssl_decrypt($realMsg, 'AES-256-CBC', $symKey, 0, $iv );
-        
-        return "$iv:::$symKey:::$realMsg:::$data";
+        return $decrypted;
     }
-    return false;
+    return $msg;
 }
 
 /**
@@ -85,7 +80,7 @@ function decryptKey( $msg )
  */
 function checkToken( $token, $user, $timestamp )
 {
-    if( hash_hmac("sha256", $timestamp + $user, $_SERVER['HASH_KEY']) == $token )
+    if( hash_hmac("sha256", $timestamp . $user, $_SERVER['HASH_KEY']) == $token )
         return true;
     return false;
 }
@@ -100,7 +95,7 @@ function createToken( $user )
 {
     $timestamp = date('Y-m-d H:i:s');
 
-    $token = hash_hmac("sha256", $timestamp + $user, $_SERVER['HASH_KEY']);
+    $token = hash_hmac("sha256", $timestamp . $user, $_SERVER['HASH_KEY']);
 
     return array( "timestamp" => $timestamp, "token" => $token );
 }
@@ -110,8 +105,69 @@ function createToken( $user )
  * $string  -   the string to sanitize
  * returns  -   the sanitized string
  */
-function sanitize($string)
+function sanitize( $string )
 {
     return htmlentities( htmlspecialchars( $string ) );
+}
+
+/**
+ * Verifies the user's stage to make sure they should access the given page
+ * $stage   -   the user's stage that should be verified
+ * $correct -   the stage that should be verified against; the correct stage the user should be on
+ * returns  -   whether or not the stage was correct
+ */
+function checkStage( $stage, $correct )
+{
+    switch($correct)
+    {
+        case "start":
+            if( $stage == "start" || $stage == "guessed" )
+                return true;
+            break;
+
+        case "drawing":
+            if( $stage == "drawing" || $stage == "start" )
+                return true;
+            break;
+
+        case "guessing":
+            if( $stage == "guessing" || $stage == "drawing" )
+                return true;
+            break;
+
+        case "guessed":
+            if( $stage == "guessed" || $stage == "guessing" )
+                return true;
+            break;
+        
+        default:
+            dies("Error");
+            break;
+    }
+
+    //should not be reached if stage was correct
+    //redirect to the correct page
+    switch( $stage )
+    {
+        case "start":
+            header("Location: waiting.php");
+            return false;
+        
+        case "drawing":
+            header("Location: draw.php");
+            return false;
+
+        case "guessing":
+            header("Location: guess.php");
+            return false;
+
+        case "guessed":
+            header("Location: results.php");
+            return false;
+
+        default:
+            dies("Error");
+            break;
+    }
 }
 ?>

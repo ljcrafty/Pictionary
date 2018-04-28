@@ -2,21 +2,12 @@
     require_once "Lib.php";
     require_once "../classes/DB.class.php";
 
-    //TODO: it isn't deleting the rows in the DB
-
     sessionStart();
-
-    if( !checkSession() || !array_key_exists("stage", $_SESSION) || !array_key_exists("room", $_SESSION) )
-    {
-        sessionDestroy();
-    }
-
     $db = new DB();
 
-    //validate username, stage and room
-    if( !$db -> validateRoom($_SESSION['room']) || !$db -> validateUser($_SESSION['user'], $_SESSION['room']) )
+    if( !checkToken( $_SESSION['token'], $_SESSION['username'], $_SESSION['timestamp'] ) )
     {
-        sessionDestroy();
+        die();
     }
 
     //remove data from DB

@@ -1,17 +1,9 @@
 <?php 
 $title = "Login";
 require_once "inc/header.inc.php";
-
-//TODO: make everything mobile-friendly
 ?>
-<body class="padding" onload="startEncrypt()">
-    <?php
-        if( isset($_SESSION) && array_key_exists("error", $_SESSION) )
-        {
-            echo "<div class='error'>" . $_SESSION['error'] . "</div>";
-            unset($_SESSION['error']);
-        }
-    ?>
+<body class="padding">
+    <?php include_once "inc/error.inc.php" ?>
 
     <h1>!Pictionary</h1>
 
@@ -26,7 +18,6 @@ require_once "inc/header.inc.php";
         </span>
         <input class="button" type="button" value="Back"  name="back" style="--background: #999" onclick="hide(this, true)"/>
         <input class="button" type="submit" value="Done" name="done" style="--background: #008b00"/>
-        <input type="hidden" id="key" name="key" />
     </form>
     <form id="startForm">
         <span>

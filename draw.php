@@ -12,19 +12,27 @@
         dies("An error occurred");
     }
 
+    checkStage( $_SESSION['stage'], "drawing" );
+
     //update stage
     $db = new DB();
+
+    //check that there are enough players to start
+    $numIn = $db -> numPlayers( $_SESSION['room'] );
+
+    if( $numIn < 1 )
+    {
+        $_SESSION['error'] = "You can't start a game with only one player";
+        header("Location: waiting.php");
+        die();
+    }
+
     $db -> changeStage($_SESSION['username'], $_SESSION['room'], 'drawing');
-    //TODO: keep people from submitting without description in PHP
-    //TODO: keep from starting without any other players
-    //TODO: make coming to draw page redirect all of the other users as well (when they check for users in
-    //      the waiting room, if any user has moved to draw screen, redirect with JS; use players in and out
-    //      in that request)
-    //TODO: add touch screen drawing
-    //TODO: make the pages dynamic
 ?>
+<script src="js/svg4everybody.min.js"></script>
 <body onload='initCanvas();'>
     <?php require_once INC . "nav.inc.php"; ?>
+    <?php include_once INC . "error.inc.php" ?>
     <main>
         <div id='drawArea'>
             <svg id='toolbox' width='80' height='280'>
@@ -41,22 +49,26 @@
                 <rect onmousedown="changeColor(this)" x='5' y='180' width='30' height='30' style='fill: black'/>
                 <rect onmousedown="changeColor(this)" class='stroke' x='41' y='181' width='28' height='28' style='fill: white'/>
 
-                <use x='5' y='215' width='30' height='30' href="icons/undo.svg#undo" style='fill:none' onclick="undo();"></use>
-                <use x='40' y='215' width='30' height='30' href="icons/redo.svg#redo" style='fill:none' onclick="redo();"></use>
-                <use x='20' y='250' width='30' height='30' href="icons/delete.svg#delete" style='fill:none' onclick="clearCanvas()"></use>
+                <use x='5' y='215' width='30' height='30' xlink:href="icons/undo.svg#undo" style='fill:none' onclick="undo();"></use>
+                <rect class="hover" x='5' y='215' width='28' height='28' style='fill: rgba(255, 255, 255, 0.3)' onclick="undo();"/>
+
+                <use x='40' y='215' width='30' height='30' xlink:href="icons/redo.svg#redo" style='fill:none' onclick="redo();"></use>
+                <rect class="hover" x='40' y='215' width='28' height='28' style='fill: rgba(255, 255, 255, 0.3)' onclick="redo();"/>
+
+                <use x='20' y='250' width='30' height='30' xlink:href="icons/delete.svg#delete" style='fill:none' onclick="clearCanvas()"></use>
+                <rect class="hover" x='20' y='250' width='28' height='28' style='fill: rgba(255, 255, 255, 0.3)' onclick="clearCanvas(true);"/>
             </svg>
             <canvas>Please update to a more modern browser to use this application</canvas>
-            <form id="desc" onsubmit="validateDraw()" action="waiting.php" method="POST">
+            <form id="desc" onsubmit="return validate('desc', 'Please enter a valid description of your image (No special characters)');" action="waiting.php" method="POST">
                 <label for="desc">What did you draw?</label>
                 <input type="text" name="desc" maxlength="30" />
                 <input class="button" type="submit" value="Done" name="done" style="--background: #008b00"/>
+                <input type="hidden" name="drawing"/>
             </form>
         </div>
-        <?php
-            require_once INC . "chat.inc.php";
-        ?>
+        <?php require_once INC . "chat.inc.php"; ?>
     </main>
-    <script>
+    <script><!--
     	const mouse = {
     		drawing: false,
     		curPos: { x: 0, y: 0 },
@@ -65,6 +77,6 @@
 
         var undoQueue = [];
         var redoQueue = [];
-    </script>
-</body>
+    --></script>
+    <script>svg4everybody();</script>
 <?php require_once INC . "footer.inc.php"; ?>

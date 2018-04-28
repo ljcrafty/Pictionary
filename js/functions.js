@@ -14,6 +14,7 @@
             //end condition
             if( $(ele).position().left < leftFromCenter )
             {
+                $(ele).css("visibility", "visible");
                 setTimeout( function() {
                     $(ele).slideIn(ele, direction, xPos + 14)
                  }, .5 );
@@ -32,6 +33,7 @@
             //end condition
             if( $(ele).position().left > leftFromCenter )
             {
+                $(ele).css("visibility", "visible");
                 setTimeout( function() {
                     $(ele).slideIn(ele, direction, xPos - 14)
                  }, .5 );
@@ -59,6 +61,10 @@
                     $(ele).slideOut(ele, direction, xPos + 14);
                  }, .5 );
             }
+            else
+            {
+                $(ele).css("visibility", "hidden");
+            }
         }
         else //slide out to the left
         {
@@ -71,6 +77,10 @@
                 setTimeout( function() {
                     $(ele).slideOut(ele, direction, xPos - 14);
                  }, .5 );
+            }
+            else
+            {
+                $(ele).css("visibility", "hidden");
             }
         }
     }//end slideOut
@@ -143,8 +153,10 @@ function createWithText(tag, text)
 /** 
  * Initializes the waiting room depending on the stage players are in and initializes the chat
 */
-function init()
+function initWaitRoom()
 {
+    init();
+
     var div = document.getElementsByTagName('main')[0].children[0];
     switch( stage )
     {
@@ -152,24 +164,33 @@ function init()
             var h2 = createWithText('h2', 'Welcome to !Pictionary!');
             h2.setAttribute('class', 'center')
             div.insertBefore(h2, div.children[0]);
-            var form = '<form>\n<input class="button" type="button" value="Back" ' + 
-                'name="join" style="--background: #999" onclick="logout();"/>\n' + 
-                '<input class="button" type="button" value="Start" name="start" style="--background: #008b00" ' + 
-                'onclick="javascript: window.location = \'draw.php\'"/></form>';
+            var form = '<form action="draw.php" onsubmit="return validateWait();" >\n' + 
+                '<input class="button" type="button" ' +
+                'value="Back" name="join" style="--background: #999" onclick="logout();"/>\n' + 
+                '<input class="button" type="submit" value="Start" style="--background: #008b00" ' + 
+                '/></form>';
             div.innerHTML += form;
-            playersIn();
+            playersIn(playersInHTML);
+            playersIn(checkPlayers, 'start');
             break;
-        case 'drawn':
+        case 'guessing':
         case 'guessed':
             var h2 = createWithText('h2', 'Welcome to !Pictionary!');
             h2.setAttribute('class', 'center')
             div.insertBefore(h2, div.children[0]);
-            playersIn('drawn');    
+            playersIn(playersInHTML, stage);    
             break;
         default:
             break;
     }
+}
 
+/**
+ * Initializes the help button and pressing the send button for chat messages when the enter
+ *      key is pressed
+ */
+function init()
+{
     $('#helpBox').dialog({ autoOpen: false });
 
     $("#message").keypress(function (e) {
@@ -187,7 +208,7 @@ function init()
 */
 function initCanvas()
 {
-    $('#helpBox').dialog({ autoOpen: false });
+    init();
 
     let canvas = document.getElementsByTagName("canvas")[0];
 	let ctx = canvas.getContext("2d");
@@ -195,18 +216,33 @@ function initCanvas()
 	ctx.lineWith = 1;
 	
 	//add listeners
-	canvas.addEventListener('mousedown', function(e){
-		mouse.lastPos = getMouse(canvas, e);
-		mouse.drawing = true;
+	$("canvas").on('vmousedown', function(e){
+        mouse.lastPos = getMouse(canvas, e);
+        ctx.moveTo(mouse.lastPos.x, mouse.lastPos.y);
+        mouse.drawing = true;
 	});
-	canvas.addEventListener('mousemove', function(e){
-		mouse.curPos = getMouse(canvas, e);
-	});
-	canvas.addEventListener('mouseup', function(e){
+	$("canvas").on('vmousemove', function(e){
+        if( mouse.drawing )
+        {
+            mouse.curPos = getMouse(canvas, e);
+
+            ctx.lineTo(mouse.curPos.x, mouse.curPos.y);
+            ctx.stroke();
+            
+            mouse.lastPos = mouse.curPos;
+        }
+    });
+    $("canvas").on('vclick', function(e){
         mouse.drawing = false;
+    });
+	$("canvas").on('vmouseup', function(e){
+        mouse.drawing = false;
+
         undoQueue.unshift( canvas.toDataURL() );//every stroke adds a new URL to revert to
         redoQueue = [];//after you draw over something, you can't redo your old strokes
-	});
+        document.getElementsByClassName("hover")[0].style.visibility = 'hidden';//show you can undo
+        document.getElementsByName("drawing")[0].value = canvas.toDataURL();
+    });
 	
 	// Borrowed from http://bencentra.com/code/2014/12/05/html5-canvas-touch-events.html
 	window.requestAnimFrame = (function (callback) {
@@ -223,7 +259,6 @@ function initCanvas()
 	(function draw()
     {
     	window.requestAnimFrame(draw);
-		renderCanvas();
     })();
 }
 
@@ -239,7 +274,7 @@ function changeColor(ele)
 	ctx.beginPath();
     ctx.strokeStyle = ele.style.fill;
     
-    let rects = document.getElementsByTagName("rect");
+    let rects = $("rect").not(".hover");
 
     //add indicator of which color is selected
     for( var i = 0; i < rects.length; i++ )
@@ -255,11 +290,24 @@ function changeColor(ele)
 
 /**
   * Clears the canvas of all drawings
+  * @param reset    -   boolean on whether or not the undo and redo queue should be reset
 */
-function clearCanvas()
+function clearCanvas( reset = false )
 {
-	let canvas = document.getElementsByTagName("canvas")[0];
-	canvas.width = canvas.width;
+    let canvas = document.getElementsByTagName("canvas")[0];
+    let color = canvas.getContext("2d").strokeStyle;
+    canvas.width = canvas.width;
+    document.getElementsByName("drawing")[0].value = "";
+    canvas.getContext("2d").strokeStyle = color;
+
+    if( reset )
+    {
+        undoQueue = [];
+        redoQueue = [];
+
+        document.getElementsByClassName("hover")[0].style.visibility = 'visible';
+        document.getElementsByClassName("hover")[1].style.visibility = 'visible';
+    }
 }
 
 /** 
@@ -268,14 +316,17 @@ function clearCanvas()
 function undo()
 {
     clearCanvas();
+    document.getElementsByClassName("hover")[0].style.visibility = 'visible';
 
     if( undoQueue.length > 0 )
     {
         //add to redo queue
         let undone = undoQueue.shift();
         redoQueue.unshift( undone );
+        document.getElementsByClassName("hover")[1].style.visibility = 'hidden';
 
-        if( undoQueue.length > 1 )
+        //after shift
+        if( undoQueue.length > 0 )
         {
             //repaint with last URL
             //Borrowed from https://stackoverflow.com/questions/4773966/drawing-an-image-from-a-data-url-to-a-canvas
@@ -285,7 +336,10 @@ function undo()
             img.onload = function(){
                 ctx.drawImage(img,0,0);
             };
-            img.src = undoQueue[0]; 
+            img.src = undoQueue[0];
+            
+            document.getElementsByClassName("hover")[0].style.visibility = 'hidden';
+            document.getElementsByName("drawing")[0].value = canvas.toDataURL();
         }
     }
 }
@@ -300,6 +354,7 @@ function redo()
         let redone = redoQueue.shift();
         undoQueue.unshift( redone );
         clearCanvas();
+        document.getElementsByClassName("hover")[0].style.visibility = 'hidden';//if it was redone, it can be undone
 
         //repaint with last URL
         //Borrowed from https://stackoverflow.com/questions/4773966/drawing-an-image-from-a-data-url-to-a-canvas
@@ -310,6 +365,14 @@ function redo()
             ctx.drawImage(img,0,0);
         };
         img.src = redone;
+
+        document.getElementsByName("drawing")[0].value = canvas.toDataURL();
+
+        //check size after shift for indicator
+        if( redoQueue.length == 0 )
+        {
+            document.getElementsByClassName("hover")[1].style.visibility = 'visible';
+        }
     }
 }
 
@@ -330,27 +393,60 @@ function getMouse( canvas, event )
   	};
 }
 
-/**
-  * Renders the canvas object based on the current mouse position
+/** 
+ * Make sure that the user has entered a valid description before submitting the drawing form
 */
-function renderCanvas()
+function validate( name, msg )
 {
-	let canvas = document.getElementsByTagName("canvas")[0];
-	let ctx = canvas.getContext("2d");
-	
-	if( mouse.drawing )
-	{
-		ctx.moveTo(mouse.lastPos.x, mouse.lastPos.y);
-		ctx.lineTo(mouse.curPos.x, mouse.curPos.y);
-		ctx.stroke();
-		mouse.lastPos = mouse.curPos;
-	}
+    let desc = document.getElementsByName(name)[0];
+    
+    if( desc.value.length < 1 || desc.value.length > 30 ||
+        desc.value.match('[^a-z A-Z]') != null )
+    {
+        error(msg);
+        return false;
+    }
+    
+    error();
+    return true;
 }
 
-//TODO: make this work (validate that a description was given)
-function validateDraw()
+/**
+ * Check that enough people are in the waiting room before moving on
+ */
+function validateWait()
 {
+    let num = $(".center > b").html();
+    console.log(num);
+    
+    if( num == '0' )
+    {
+        error( "You cannot start a game with only one player" );
+        return false;
+    }
+    
+    error();
+    return true;
+}
 
+/**
+ * Shows or hides an error
+ * @param msg (optional) the message to show as an error; if not given, the error will be hidden
+ */
+function error( msg = '' )
+{
+    let div = byId('error');
+
+    if(msg)
+    {
+        div.innerHTML = msg;
+        div.style.display = "inherit";
+    }
+    else
+    {
+        div.innerHTML = '';
+        div.style.display = "none";
+    }
 }
 
 /** 
@@ -358,63 +454,58 @@ function validateDraw()
 */
 function logout()
 {
-    var http = new XMLHttpRequest();
-    http.onreadystatechange = function(){
-        if(this.readyState == 4 && this.status == 200)
-        {
-            window.location = "index.php";
-        }
-    };
-    http.open('GET', 'helpers/logout.php');
-    http.send();
+    $.ajax({ 
+        type: 'GET', 
+        url: 'helpers/logout.php',
+        success: () => { window.location = "index.php"; }
+    });
+
     return undefined;
 }
 
 /**
- * Sends a symmetric key to the server to de/encrypt with
- * Borrowed from https://medium.com/@tikiatua/symmetric-and-asymmetric-encryption-with-javascript-and-go-240043e56daf
-*/
-function startEncrypt()
+ * Returns a user to the original waiting room when they want to play another game
+ */
+function playAgain()
 {
-    sjcl.beware["CBC mode is dangerous because it doesn't protect message integrity."]();
-    let pub = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDSuHHRWHdBC8v3N+2/3PZsc1Ov" +
-        "313T6u9CpXw+BrUj1cC59mjmTA6DEm7e5/HJGNeh5ZNY/aCDLIXaT/6BSUga0dlW" +
-        "1EdWFI16ilE+OtBM+rhvzD2V2K8setrKLVp4Fpsw83zlFySboJEK8HSSbBVRa0LX" +
-        "u/4aO72KNVllwn8a1QIDAQAB";
-
-    let key = generateKey(32);
-    let iv = btoa(generateKey(16));//base64 encode
-
-    let obj = JSON.parse(sjcl.encrypt( key, 'test', {mode: "cbc", iv: iv} ));
-    let symKey = key + ":::" + iv;
-
-    let rsa = new JSEncrypt();
-    rsa.setPublicKey( pub );
-    let cryptKey = rsa.encrypt( symKey );
-
-    window.localStorage.setItem("theKey", symKey);
-    $("#key").val(cryptKey + ":::" + obj.ct);
-    console.log(atob(iv) + ":::" + key + ":::" + obj.ct);
+    window.location = "waiting.php";
 }
 
 /**
- * Generates a key to encrypt with
+ * Asymmetrically encrypts a message
  * Borrowed from https://medium.com/@tikiatua/symmetric-and-asymmetric-encryption-with-javascript-and-go-240043e56daf
- * @param {int} length the length of the key to generate
- * @returns {string} a random key of the given length
+ * @param {string} msg the message to encrypt
+ * @returns {string} the encrypted message
 */
-function generateKey( length )
+function encrypt( msg )
 {
-    // define the characters to pick from
-    let chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz*&-%/!?*+=()";
-    let randomstring = "";
+    let pub = "-----BEGIN PUBLIC KEY-----MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDSuHHRWHdBC8v3N+2/3PZsc1Ov" +
+    "313T6u9CpXw+BrUj1cC59mjmTA6DEm7e5/HJGNeh5ZNY/aCDLIXaT/6BSUga0dlW" +
+    "1EdWFI16ilE+OtBM+rhvzD2V2K8setrKLVp4Fpsw83zlFySboJEK8HSSbBVRa0LX" +
+    "u/4aO72KNVllwn8a1QIDAQAB-----END PUBLIC KEY-----";
 
-    for (let i = 0; i < length; i++) 
-    {
-        let rnum = Math.floor(Math.random() * chars.length);
-        randomstring += chars.substring(rnum,rnum+1);
-    }
-    return randomstring;
+    let rsa = new JSEncrypt();
+    rsa.setPublicKey( pub );
+    let cryptKey = rsa.encrypt( msg );
+
+    return cryptKey;
+}
+
+/**
+ * Asymmetrically decrypts a message
+ * Borrowed from https://medium.com/@tikiatua/symmetric-and-asymmetric-encryption-with-javascript-and-go-240043e56daf
+ * @param {string} msg the message to decrypt
+ * @returns {string} the decrypted message
+*/
+function decrypt( msg )
+{
+    let pub = window.localStorage.getItem("theKey");
+
+    let rsa = new JSEncrypt();
+    rsa.setPrivateKey( pub );
+    let cryptKey = rsa.decrypt( msg );
+
+    return cryptKey;
 }
 
 /** 
@@ -426,15 +517,11 @@ function newChat()
     document.getElementsByName("message")[0].innerHTML = '';
     document.getElementsByName("message")[0].value = '';
 
-    var http = new XMLHttpRequest();
-    http.onreadystatechange = function() {
-        if(this.readyState == 4 && this.status == 200)
-        {
-            getChat(false);
-        }
-    };
-    http.open('GET', 'helpers/newChat.php?msg=' + msg);
-    http.send();
+    $.ajax({ 
+        type: 'GET', 
+        url: 'helpers/newChat.php?msg=' + msg,
+        success: () => { getChat(false); } 
+    });
 }
 
 /**
@@ -443,13 +530,13 @@ function newChat()
 */
 function getChat( timeout = true )
 {
-    var http = new XMLHttpRequest();
-    http.onreadystatechange = function() {
-        if(this.readyState == 4 && this.status == 200)
-        {
+    $.ajax({ 
+        type: 'GET', 
+        url: 'inc/chat.inc.php',
+        success:(result) => {
             let ele = byId("messages");
             let child = create("template");
-            child.innerHTML = this.responseText.trim();
+            child.innerHTML = result.trim();
             child = child.content.firstChild.childNodes[1];
             
             ele.innerHTML = ''; 
@@ -461,10 +548,8 @@ function getChat( timeout = true )
                 setTimeout(function() {
                     byId("messages").scrollTop = 10000;
                 }, 500);
-        }
-    };
-    http.open('GET', 'inc/chat.inc.php');
-    http.send();
+        } 
+    });
 }
 
 /**
@@ -473,19 +558,29 @@ function getChat( timeout = true )
  *      number of players in the room is obtained. If stage is provided, the number of players in the 
  *      room who are not at the given stage is obtained.
 */
-//TODO: add JS validation to all forms and buttons (make sure they can move onto next page)
-function playersIn( stage = '' )
+function playersIn( callback, stage = '' )
 {
-    var http = new XMLHttpRequest();
-    http.onreadystatechange = function() { 
-        if(this.readyState == 4 && this.status == 200)
-        {
-            playersInHTML(stage, this.responseText);
-            console.log(this.responseText); 
-        }
-    };
-    http.open('GET', 'helpers/players.php?' + (stage != '' ? 'stage=' + stage : ''));
-    http.send();
+    $.ajax({
+        type: 'GET', 
+        url: 'helpers/players.php?' + (stage != '' ? 'stage=' + stage : ''), 
+        success: (result) => { callback(stage, result); } 
+    });
+}
+
+/**
+ * Checks whether or not the player should move onto the draw stage
+ * @param {string} stage the stage you are checking for (needed to conform to other function)
+ * @param {int} num the number of players outside of the current stage
+ */
+function checkPlayers( stage, num )
+{
+    //if there are any players that aren't in the given stage
+    if( num > 0 )
+    {
+        //move to next stage
+        window.location = "draw.php";
+    }
+    setTimeout( () => { playersIn(checkPlayers, 'start'); }, 500 );
 }
 
 /**
@@ -494,7 +589,6 @@ function playersIn( stage = '' )
  * @param {string} stage the stage to get numbers for
  * @param {int} num the number of people to record on the page
 */
-//TODO: when you are waiting on 0 people, move everyone to next stage
 function playersInHTML( stage, num )
 {
     let text1 = '', text2 = '';
@@ -502,13 +596,35 @@ function playersInHTML( stage, num )
     //total players in the room
     if( stage == '' )
     {
-        text1 = 'There are ';
-        text2 = ' other people in your room. Press Start when everyone\'s here!';
+        text1 = 'There ' + (num > 1 ? "are " : "is ");
+        text2 = ' other ' + (num > 1 ? "people " : "person ") + 
+            ' in your room. Press Start when everyone\'s here!';
     }
     else //players who aren't at a certain stage
     {
+        //redirect if you aren't waiting for someone
+        if( num <= 0 )
+        {
+            switch(stage)
+            {
+                case "guessing":
+                case "drawn":
+                    window.location = "guess.php";
+                    break;
+
+                case "guessed":
+                    window.location = "results.php";
+                    break;
+                
+                default:
+                    window.location = "index.php";
+                    break;
+            }
+        }
+        console.log(num);
+
         text1 = 'We\'re waiting for ';
-        text2 = ' people in your room to finish.';
+        text2 = ' ' + (num > 1 ? "people " : "person ") + ' in your room to finish.';
     }
 
     var div = document.getElementsByTagName('main')[0].children[0];
@@ -527,5 +643,5 @@ function playersInHTML( stage, num )
     }
 
     div.insertBefore(p, div.children[2]);
-    setTimeout(function() { playersIn(stage); }, 1000);
+    setTimeout(function() { playersIn( playersInHTML, stage ); }, 1000);
 }
